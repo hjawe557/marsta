@@ -1,0 +1,20 @@
+#ifndef I2C_H
+#define I2C_H
+#include <stm32f10x_map.h>
+
+#define I2C_READ   1
+#define I2C_WRITE  0
+
+#define I2C_STOP   0
+#define I2C_NOSTOP 1
+
+void i2c_init(uint32_t bus, uint32_t rate);
+int i2c_transact(uint32_t bus, uint8_t address, 
+		 uint8_t rw, uint8_t len, 
+		 uint8_t nostop,
+		 uint8_t *buf);
+
+
+
+
+#endif

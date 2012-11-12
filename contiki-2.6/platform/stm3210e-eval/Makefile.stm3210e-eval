@@ -1,0 +1,60 @@
+$(info CORE value: $(CORE))
+
+# Not really...
+SUBTARGET = ZD
+
+# Enable USB CDC ACM
+#USB_CDC_ACM_CLASS = 1
+USB_CDC_ETH_CLASS = 1
+
+CONTIKI_PLATFORM_DIR = $(CONTIKI)/platform/stm3210e-eval
+
+#define UIP_CONF_LOGGING         1
+
+# OpenOCD
+OPENOCD = sudo openocd
+OPENOCD_DIR = -s $(CONTIKI_PLATFORM_DIR)/openocd
+OPENOCD_CFG = -f stm3210e_eval.cfg -f jtagkey2.cfg
+
+STM3210E_PLATFORM_SRC += leds.c 
+STM3210E_PLATFORM_SRC += leds-arch.c 
+STM3210E_PLATFORM_SRC += symdummy.c 
+STM3210E_PLATFORM_SRC += rtimer-arch.c 
+#STM3210E_PLATFORM_SRC += cdc-acm-string-descriptors.c
+
+#cdc-acm-string-descriptors.c: cdc-acm-string-descriptors.xml
+
+ifndef CONTIKI_TARGET_MAIN
+CONTIKI_TARGET_MAIN = contiki-main.c
+endif
+
+#CODEPROP_SOURCES = codeprop-otf.c ram-segments.c 
+
+CONTIKI_TARGET_DIRS = .
+# Master clock frequency
+MCK=48000000
+CFLAGS+=-DAUTOSTART_ENABLE
+
+
+CONTIKI_TARGET_SOURCEFILES += $(SENSORS) $(STM3210E_PLATFORM_SRC) \
+ $(CODEPROP_SOURCES) $(CONTIKI_TARGET_MAIN)
+
+# include $(CONTIKI)/platform/$(TARGET)/apps/Makefile.apps
+
+include $(CONTIKI)/cpu/arm/stm32f103/Makefile.stm32f103
+
+#contiki-$(TARGET).a: ${addprefix $(OBJECTDIR)/,symbols.o}
+
+ifndef BASE_IP
+BASE_IP := 172.16.1.1
+endif
+
+### System dependent Makefile
+
+ifndef WINDIR
+  ifdef OS
+    ifneq (,$(findstring Windows,$(OS)))
+      WINDIR := Windows
+    endif
+  endif
+endif

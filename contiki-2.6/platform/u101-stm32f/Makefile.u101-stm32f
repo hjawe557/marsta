@@ -1,0 +1,82 @@
+$(info CORE value: $(CORE))
+
+# Not really...
+SUBTARGET = CB
+
+# Enable USB CDC ACM
+#USB_CDC_ACM_CLASS = 1
+#USB_CDC_ETH_CLASS = 1
+
+CONTIKI_PLATFORM_DIR = $(CONTIKI)/platform/u101-stm32f
+
+# OpenOCD
+OPENOCD = sudo openocd
+OPENOCD_DIR = -s $(CONTIKI_PLATFORM_DIR)/openocd
+#OPENOCD_CFG = -f stm3210e_eval.cfg -f jtagkey2.cfg
+#OPENOCD_CFG = -f stm3210e_eval.cfg -f busblaster.cfg
+#OPENOCD_CFG = -f interface/neodb.cfg -f target/stm32f1x.cfg 
+#OPENOCD_CFG = -f interface/jtagkey2.cfg -f target/stm32f1x.cfg
+#OPENOCD_CFG = -f target/stm32f1x.cfg -f busblaster.cfg
+OPENOCD_CFG = -f busblaster.cfg -f target/stm32f1x.cfg
+
+U101_PLATFORM_SRC += leds.c 
+U101_PLATFORM_SRC += leds-arch.c 
+U101_PLATFORM_SRC += rtimer-arch.c 
+U101_PLATFORM_SRC += symdummy.c 
+U101_PLATFORM_SRC += rf230hal.c 
+U101_PLATFORM_SRC += watchdog.c 
+#U101_PLATFORM_SRC += tn100.c
+
+U101_PLATFORM_SRC += rf230bb.c
+
+U101_PLATFORM_SRC += i2c.c
+#U101_PLATFORM_SRC += eriks.c 
+U101_PLATFORM_SRC += em4325.c 
+#U101_PLATFORM_SRC += lsm303dlh.c 
+#U101_PLATFORM_SRC += bq27200.c 
+U101_PLATFORM_SRC += stcn75.c 
+U101_PLATFORM_SRC += uip-log.c
+#U101_PLATFORM_SRC += cdc-acm-string-descriptors.c 
+
+#cdc-acm-string-descriptors.c: cdc-acm-string-descriptors.xml
+
+ifndef CONTIKI_TARGET_MAIN
+CONTIKI_TARGET_MAIN = contiki-u101-stm32f-main.c
+endif
+
+#CODEPROP_SOURCES = codeprop-otf.c ram-segments.c 
+CONTIKI_TARGET_DIRS = . dev ${addprefix ../u101/,dev}
+#CONTIKI_TARGET_DIRS = . dev
+# Master clock frequency
+MCK=48000000
+CFLAGS+=-DAUTOSTART_ENABLE
+CFLAGS+=-I$(CONTIKI)/platform/u101
+CFLAGS+=-I$(CONTIKI)/platform/u101/dev
+
+CONTIKI_TARGET_SOURCEFILES += $(SENSORS) $(U101_PLATFORM_SRC) \
+ $(CODEPROP_SOURCES) $(CONTIKI_TARGET_MAIN)
+
+ifdef UIP_CONF_IPV6
+CFLAGS += -DWITH_UIP6=1
+endif
+
+#include $(CONTIKI)/platform/$(TARGET)/apps/Makefile.apps
+
+include $(CONTIKI)/cpu/arm/stm32f103/Makefile.stm32f103
+#include $(CONTIKI)/cpu/arm/stm32l/Makefile.stm32l
+
+#contiki-$(TARGET).a: ${addprefix $(OBJECTDIR)/,symbols.o}
+
+ifndef BASE_IP
+BASE_IP := 172.16.1.1
+endif
+
+### System dependent Makefile
+
+ifndef WINDIR
+  ifdef OS
+    ifneq (,$(findstring Windows,$(OS)))
+      WINDIR := Windows
+    endif
+  endif
+endif

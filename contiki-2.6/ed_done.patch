@@ -1,0 +1,12 @@
+diff --git a/platform/u101-stm32l/rf230hal.h b/platform/u101-stm32l/rf230hal.h
+index 20343a6..b084485 100644
+--- a/platform/u101-stm32l/rf230hal.h
++++ b/platform/u101-stm32l/rf230hal.h
+@@ -9,6 +9,7 @@
+  */
+ #define HAL_BAT_LOW_MASK       ( 0x80 ) /**< Mask for the BAT_LOW interrupt. */
+ #define HAL_TRX_UR_MASK        ( 0x40 ) /**< Mask for the TRX_UR interrupt. */
++#define HAL_ED_DONE_MASK       ( 0x10 ) /**< Mask for the ED_DONE interrupt */
+ #define HAL_TRX_END_MASK       ( 0x08 ) /**< Mask for the TRX_END interrupt. */
+ #define HAL_RX_START_MASK      ( 0x04 ) /**< Mask for the RX_START interrupt. */
+ #define HAL_PLL_UNLOCK_MASK    ( 0x02 ) /**< Mask for the PLL_UNLOCK interrupt. */

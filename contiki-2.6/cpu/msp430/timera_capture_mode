@@ -1,0 +1,56 @@
+#include "contiki.h"
+#ifdef __IAR_SYSTEMS_ICC__
+#include <msp430.h>
+#else
+#include <io.h>
+#include <signal.h>
+#endif
+
+extern volatile uint8_t pulse_counter;
+extern volatile uint16_t pulse_start_time;
+extern volatile uint16_t pulse_end_time;
+
+/*---------------------------------------------------------------------------*/
+/* Pulse interrupt for timestamping and measuring the frequency of the pulses */
+#ifdef __IAR_SYSTEMS_ICC__
+#pragma vector=TIMERA1_VECTOR
+__interrupt void
+#else
+interrupt(TIMERA1_VECTOR)
+#endif
+pulse_timera1_interrupt(void)
+{
+  int tbiv;
+  ENERGEST_ON(ENERGEST_TYPE_IRQ);
+  /* always read TBIV to clear IFG */
+  taiv = TAIV;
+  if(pulse_timera1_IS_1) {
+    pulse_counter++;
+    pulse_start_time = TACCR1;
+  } else {
+    pulse_counter = 0;
+    pulse_end_time = TACCR1;
+  }
+  ENERGEST_OFF(ENERGEST_TYPE_IRQ);
+}
+/*---------------------------------------------------------------------------*/
+void
+cc2420_arch_sfd_init(void)
+{
+  /* Need to select the special function! */
+  P2SEL = BV(CC2420_SFD_PIN);
+  
+  /* start timer A - 32768 ticks per second */
+  TACTL = TASSEL_1 | TACLR;
+  
+  /* CM_3 = capture mode - capture on both edges */
+  TACCTL1 = CM_3 | CAP | SCS;
+  TACCTL1 |= CCIE;
+  
+  /* Start Timer_A in continuous mode. */
+  TACTL |= MC1;
+
+  TAR = RTIMER_NOW();
+}
+/*---------------------------------------------------------------------------*/
+

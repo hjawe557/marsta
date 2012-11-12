@@ -1,0 +1,125 @@
+
+Contiki and the UPWIS u101 ("Upnod")
+-------------------------------------
+
+The UPWIS u101 or "Upnod" is a modular sensor node platform in the
+sense that it supports a variety of configurations (exchangable CPU:s,
+sensors and radios).
+
+This document covers an introduction on how to build Contiki for one
+configuration - the STM32 CPU module and the Atmel AT86RF231 radio.
+
+Building Contiki
+----------------
+
+The CodeSourcery toolchain, Lite Edition, is a good toolchain to use.
+There have been some changes in the linker script syntax over the
+years.  I've had problems with offset sections with some
+toolchains. 2010q1-188 has worked well for me. Other releases may work
+as well.
+
+http://www.codesourcery.com/sgpp/lite/arm/portal/release1294
+
+Make sure that the toolchain is available in the $PATH. Be careful if
+you have multiple arm-none-eabi- toolchains (ensure that Thea's
+correct one is used):
+
+export PATH=$PATH:/path/to/toolchain/bin
+
+erik@f1:~$ arm-none-eabi-gcc --version
+arm-none-eabi-gcc (Sourcery G++ Lite 2010q1-188) 4.4.1
+Copyright (C) 2009 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+I have pathced the stm32f103 Makefile to use the arm-none-eabi- toolchain.
+If your source tree isn't patched like this, you may need to pass some
+variables to make:
+
+make TARGET=u101 CC=arm-none-eabi-gcc AR=arm-none-eabi-ar OBJCOPY=arm-none-eabi-objcopy example-shell.bin
+
+I only need to do this:
+
+make TARGET=u101 example-shell.bin
+
+erik@f1:~/e1/upwis/contiki$ pwd
+/home/erik/e1/upwis/contiki
+erik@f1:~/e1/upwis/contiki$ cd examples/example-shell/
+erik@f1:~/e1/upwis/contiki/examples/example-shell$ make TARGET=u101 CC=arm-none-eabi-gcc AR=arm-none-eabi-ar OBJCOPY=arm-none-eabi-objcopy example-shell.bin 
+
+Or:
+
+erik@f1:~/e1/upwis/contiki/examples/example-shell$ make TARGET=u101 example-shell.bin a
+
+
+[...]
+
+erik@f1:~/e1/upwis/contiki/examples/example-shell$ ls -l example-shell.bin 
+-rwxr-xr-x 1 erik erik 97544  7 jun 11.28 example-shell.bin
+
+
+Uploading the image using OpenOCD
+---------------------------------
+
+I use an Amontec JTAGkey2. I'm sure other JTAG adapters work too but
+this is the only one I've tested. 
+
+Make sure that the JTAG debugger is connected to the board. Run this:
+
+$ openocd -f /usr/share/openocd/scripts/target/stm32.cfg -f /usr/share/openocd/scripts/interface/jtagkey2.cfg
+
+You should see something like this (look for an indication that an STM32 device
+is found):
+
+Open On-Chip Debugger 0.3.1 (2009-11-25-12:22)
+$URL$
+For bug reports, read
+        http://openocd.berlios.de/doc/doxygen/bugs.html
+1000 kHz
+jtag_nsrst_delay: 100
+jtag_ntrst_delay: 100
+trst_and_srst separate srst_gates_jtag trst_push_pull srst_open_drain
+Info : max TCK change to: 30000 kHz
+Info : clock speed 1000 kHz
+Info : JTAG tap: stm32.cpu tap/device found: 0x3ba00477 (mfg: 0x23b, part: 0xba00, ver: 0x3)
+Info : JTAG tap: stm32.bs tap/device found: 0x06414041 (mfg: 0x020, part: 0x6414, ver: 0x0)
+
+Then, in another terminal, run:
+
+erik@f1:~$ telnet localhost 4444
+Trying ::1...
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+Open On-Chip Debugger
+> 
+
+This is a sequence of commands to OpenOCD to upload the binary you just built
+and execute it:
+
+reset halt
+stm32x mass_erase 0
+flash write_bank 0 /home/erik/e1/upwis/contiki/examples/rime/example-abc.bin 0
+reset
+
+The commands may be given on one single line separated by semicolons:
+
+reset halt ; stm32x mass_erase 0 ; flash write_bank 0 /home/erik/e1/upwis/contiki/examples/rime/example-abc.bin 0 ; reset
+
+There is also a make target to do all of this. Again, you may have to
+pass arguments to make depending on which patches you use. On my system, this
+command invokes OpenOCD, uploads the image and resets the CPU:
+
+$ make TARGET=u101 example-shell.u
+
+Currently, there is no support for USB at all on this platform. The only
+way to access some kind of console is through the serial ports on one
+of the headers.
+
+Using a terminal application (minicom for example), the console is available:
+
+minicom -o
+
+1.1: Contiki> 
+
+
